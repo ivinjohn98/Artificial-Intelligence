@@ -1,0 +1,57 @@
+(defun make-state (x y) (list x y))
+
+(defun value-x (state) (car state))
+
+(defun value-y (state) (cadr state))
+
+(defun fill-x (state capacity) (make-state (car capacity) (cadr state)))
+
+(defun fill-y (state capacity) (make-state (car state) (cadr capacity)))
+
+(defun empty-x (state) (make-state 0 (cadr state)))
+
+(defun empty-y (state) (make-state (car state) 0))
+
+(defun pour-x-to-y (state capacity)
+	(cond 	((< (cadr capacity) (+ (value-x state) (value-y state))) (list (- (value-x state) (- (cadr capacity) (value-y state))) (cadr capacity)))
+		(t (list 0 (+ (value-x state) (value-y state))))
+	)
+)
+
+(defun pour-y-to-x (state capacity)
+	(cond 	((< (car capacity) (+ (value-x state) (value-y state)))
+			(list (car capacity) (- (value-y state) (- (car capacity) (value-x state)))))
+		(t (list (+ (value-x state) (value-y state)) 0))
+	)
+)
+
+(defun is-goal (state water)
+	(cond 	((equal state water) t)
+		(t nil)
+	)
+)
+
+(defun is-present (state mylist)
+	(cond 	((null mylist) nil)
+		((equal state (car mylist)) t)
+		(t (is-present state (cdr mylist)))
+	)
+)
+
+(defun dfs-jar-water (state water output capacity)
+	(cond   ((null state) '())
+		((is-goal state water) (cons state output))
+		((not (is-present state output)) 
+			(or 	(dfs-jar-water (fill-x state capacity) water (cons state output) capacity)
+				(dfs-jar-water (fill-y state capacity) water (cons state output) capacity)
+				(dfs-jar-water (empty-x state) water (cons state output) capacity)
+				(dfs-jar-water (empty-y state) water (cons state output) capacity)
+				(dfs-jar-water (pour-x-to-y state capacity) water (cons state output) capacity)
+				(dfs-jar-water (pour-y-to-x state capacity) water (cons state output) capacity)
+			)
+		)
+	)
+)
+(defun jar-water (capacity water) (dfs-jar-water '(0 0) water '() capacity))
+
+

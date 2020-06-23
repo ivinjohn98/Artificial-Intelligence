@@ -1,0 +1,199 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;find posintion of 0 in a state
+
+(defun find-pos (state)
+	(cond	((equal 0 (car state)) 0)
+		(t (+ 1 (find-pos (cdr state))))
+	)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;move left right down up operations return the modified state
+
+(defun left (state)
+	(cond 	((null state) '())
+		((equal 0 (cadr state)) (append (list (cadr state) (car state)) (left (cddr state))))
+		(t (cons (car state) (left (cdr state))))
+	)
+)
+
+(defun move-l (state)
+	(cond 	((or (equal 0 (find-pos state)) (equal 3 (find-pos state)) (equal 6 (find-pos state))) '())
+		(t (left state))
+	)
+)
+
+(defun right (state)
+	(cond 	((null state) '())
+		((equal 0 (car state)) (append (list (cadr state) (car state)) (right (cddr state))))
+		(t (cons (car state) (right (cdr state))))
+	)
+)
+
+(defun move-r (state)
+	(cond 	((or (equal 2 (find-pos state)) (equal 5 (find-pos state)) (equal 8 (find-pos state))) '())
+		(t (right state))
+	)
+)
+
+(defun up (state)
+	(cond 	((null state) '())
+		((equal 0 (cadddr state)) (append (list (cadddr state) (cadr state) (caddr state) (car state)) (up (cddddr state))))
+		(t (cons (car state) (up (cdr state))))
+	)
+)
+
+(defun move-u (state)
+	(cond 	((or (equal 0 (find-pos state)) (equal 1 (find-pos state)) (equal 2 (find-pos state))) '())
+		(t (up state))
+	)
+)
+
+(defun down (state)
+	(cond 	((null state) '())
+		((equal 0 (car state)) (append (list (cadddr state) (cadr state) (caddr state) (car state)) (down (cddddr state))))
+		(t (cons (car state) (down (cdr state))))
+	)
+)
+
+(defun move-d (state)
+	(cond 	((or (equal 6 (find-pos state)) (equal 7 (find-pos state)) (equal 8 (find-pos state))) '())
+		(t (down state))
+	)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;return the hurestic of a state h(n)
+
+(defun hur (state goal)
+	(cond 	((null state) 0)
+		((equal (car state) (car goal)) (hur (cdr state) (cdr goal)))
+		(t (+ 1 (hur (cdr state) (cdr goal))))
+	)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;sorting acoording to hurestic value
+
+(defun largest (nation)
+	(cond 	((null (cdr nation)) (car nation))
+		((< (caar nation) (car (largest (cdr nation)))) (car nation))
+		(t (largest (cdr nation)))
+	)
+)
+
+(defun remove-obj (nation obj)
+	(cond	((null nation) '())
+		((equal (car nation) obj) (cdr nation))
+		(t (cons (car nation) (remove-obj (cdr nation) obj)))
+	)
+)
+
+(defun sort-h (nation)
+	(cond	((null nation) '())
+		(t (cons (largest nation) (sort-h (remove-obj nation (largest nation)))))
+	)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;search for a state in a nation
+
+(defun search-state (nation state)
+	(cond 	((null nation) '())
+		((equal (cadar nation) state) t)
+		(t (search-state (cdr nation) state))
+	)
+)
+
+(defun obj-nation (nation state)
+	(cond 	((null nation) '())
+		((equal (cadar nation) state) (car nation))
+		(t (obj-nation (cdr nation) state))
+	)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;printing the path from start to the goal
+
+(defun parent-of (obj)
+	(caddr obj)
+)
+
+(defun path-length (nation)
+	(cond 	((null nation) 0)
+		(t (+ 1 (path-length (cdr nation))))
+	)
+)
+
+(defun print-path (nation state)
+	(cond	((null state) '())
+		((search-state nation state) (cons state (print-path nation (parent-of (obj-nation nation state)))))
+	)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;children of a state
+
+(defun remove-dup (nation)
+	(cond 	((null nation) '())
+		((equal '() (cadar nation)) (remove-dup (cdr nation)))
+		(t (cons (car nation) (remove-dup (cdr nation ))))
+	)
+)
+
+(defun children (state goal g)
+	(list (list (+ g (hur (move-l state) goal)) (move-l state) state (+ 1 g))
+		(list (+ g (hur (move-r state) goal)) (move-r state) state (+ 1 g))
+		(list (+ g (hur (move-u state) goal)) (move-u state) state (+ 1 g))
+		(list (+ g (hur (move-d state) goal)) (move-d state) state (+ 1 g))
+	)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;main
+
+(defun children-check (open closed kids obj goal g)
+	(cond 	((null kids) (best-fs (sort-h open) (cons obj closed) goal g))
+		((not (or (search-state open (cadar kids)) (search-state closed (cadar kids))))
+(children-check (cons (car kids) open) closed (cdr kids) obj goal g))
+		((and (search-state open (cadar kids))
+(> (path-length (print-path (cons (obj-nation open (cadar kids)) closed) (cadar kids))) 
+   (path-length (print-path (cons (car kids) closed) (cadar kids)))))
+(children-check (cons (car kids) (remove-obj open (obj-nation open (cadar kids)))) closed (cdr kids) obj goal g))
+		((and (search-state closed (cadar kids))
+(> (path-length (print-path closed (cadar kids))) 
+   (path-length (print-path (cons (car kids) closed) (cadar kids))))) 
+(children-check (cons (car kids) open) (remove-obj closed (obj-nation closed (cadar kids))) (cdr kids) obj goal g))
+		(t (children-check open closed (cdr kids) obj goal g))
+	)
+)
+
+(defun best-fs (open closed goal g)
+	(cond 	((null open) 'Impossible)
+		((equal (cadar open) goal) (print-path (cons (car open) closed) goal))
+		(t (children-check (cdr (sort-h open)) closed (remove-dup (children (cadar (sort-h open)) goal g)) (car (sort-h open)) goal (path-length (print-path (cons (car open) closed) (cadar open)))))
+	)
+)
+
+(defun main (start goal)
+	(best-fs (list (list (hur start goal) start '())) '() goal 0)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;editing;;;
+(defun children-check (open closed kids obj goal)
+	(cond ((null kids) (best-fs (sort-h open) (cons obj closed) goal))
+		((not (or (search-state open (cadar kids)) (search-state closed (cadar kids))))
+(children-check (cons (car kids) open) closed (cdr kids) obj goal))
+		((and (search-state open (cadar kids))
+(>  (cadddr (obj-nation open (cadar kids))) (caddr (cdar kids))))
+(children-check (cons (car kids) (remove-obj open (obj-nation open (cadar kids)))) closed (cdr kids) obj goal))
+		((and (search-state closed (cadar kids))
+(>	(cadddr (obj-nation closed (cadar kids))) (caddr (cdar kids))))
+(children-check (cons (car kids) open) (remove-obj closed (obj-nation closed (cadar kids))) (cdr kids) obj goal))
+		(t (children-check open closed (cdr kids) obj goal))
+	)
+)
+
+(defun best-fs (open closed goal)
+	(cond 	((null open) 'Impossible)
+		((equal (cadar open) goal) 'found)
+		(t (children-check (cdr (sort-h open)) closed (remove-dup (children (cadar (sort-h open)) goal (caddr (cdar (sort-h open))))) (car (sort-h open)) goal))
+		(t (children-check (cdr (sort-h open)) closed (remove-dup (children (cadar (sort-h open)) goal (caddr (cdar (sort-h open))))) (car (sort-h open)) goal))
+	)
+)
+
+(defun main (start goal)
+	(best-fs (list (list (hur start goal) start '() 0)) '() goal)
+)

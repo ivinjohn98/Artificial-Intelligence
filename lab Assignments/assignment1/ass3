@@ -1,0 +1,122 @@
+(defvar *start* '(1 2 3
+		  4 5 6
+		  7 8 0))
+
+(defvar *goal* '(1 8 7
+		 2 0 6
+		 3 4 5))
+
+(defvar *adj*
+    '((0 1 3)
+      (1 0 4 2)
+      (2 1 5) 
+      (3 0 4 6)
+      (4 1 3 5 7)
+      (5 2 4 8)
+      (6 3 7)
+      (7 4 6 8)
+      (8 5 7)))
+
+
+(defun goalp (state)
+    (equal state  *goal*))
+
+(defun transpose (state i j)
+    (transpose1 state j i (nth i state) (nth j state)))
+
+(defun transpose1 (state i j ival jval)
+    (cond
+	((null state) nil)
+	((zerop i)
+	    (cons ival
+		(transpose1 (cdr state) (- i 1) (- j 1) ival jval)))
+	((zerop j)
+	    (cons jval
+		(transpose1 (cdr state) (- i 1) (- j 1) ival jval)))
+	(t
+	    (cons (car state)
+		(transpose1 (cdr state) (- i 1) (- j 1) ival jval)))))
+
+(defun loc-of (num state)
+    (cond
+	((null state) 0)
+	((eq (car state) num) 0)
+	((+ 1 (loc-of num (cdr state))))))
+
+(defun space-at (state)
+    (loc-of 0 state))
+
+(defun new-states (state)
+    (let ((zloc (space-at state)))
+	(mapcar #'(lambda (toloc)
+		      (transpose state zloc toloc))
+	    (cdr (assoc zloc *adj*)))))
+
+(defun heur-value (state)
+    (+	(* 3 (similarity state *goal*))
+	(adj-value state *goal*)))
+
+;;; similarity is the number of tiles in the same position in two states
+(defun similarity (s1 s2)
+    (cond
+	((or (null s1) (null s2)) 0)
+	((equal (car s1) (car s2)) 
+	    (+ 1 (similarity (cdr s1) (cdr s2))))
+	((similarity (cdr s1) (cdr s2)))))
+
+(defun adj-num (num state)
+    (mapcar
+	#'(lambda (n) (nth n state))
+	(cdr (assoc (loc-of num state) *adj*))))
+
+(defun is-present (x l)
+	(cond 	((null l) nil)
+		((equal x (car l)) t)
+		(t (is-present x (cdr l)))
+	)
+)
+
+(defun number-common (l1 l2)
+    (cond
+	((null l1) 0)
+	((null l2) 0)
+	((is-present (car l1) l2)
+	    (+ 1 (number-common (cdr l1) l2)))
+	((number-common (cdr l1) l2))))
+
+
+(defun adj-value (s1 s2)
+    (apply #'+ 
+	(mapcar
+	    #'(lambda (num)
+		  (number-common (adj-num num s1) (adj-num num s2)))
+	    '(1 2 3 4 5 6 7 8))))
+
+(defun hval-of (node) (car node))
+(defun state-of (node) (cadr node))
+(defun path-of (node) (cdr node))
+(defun depth-of (node) (length (cddr node)))
+
+(defvar *visited* nil)
+(defvar *heur-mult* 2)
+
+(defun best (state open close)
+	(setf open (list (list (heur-value state) state)))
+	(setf *visited* nil)
+	(loop
+	    	(cond ((null open)
+			(return (list 'no 'solution 'found))))
+	(cond ((goalp (state-of (car open)))
+		(return (path-of (car open)))))
+	
+	(let	((children (new-states (state-of (car open)))))
+(setf open (combine-queue children (car open) (cdr open))))))
+
+(defun combine-queue (new-states node queue)
+    (push (state-of node) *visited*)
+    (dolist (state new-states)
+	(if (not (member state *visited* :test #'equal))
+	    (push (cons (- (* *heur-mult* (heur-value state)) (depth-of node))
+		      (cons state (cdr node)))
+		queue)))
+    (sort queue #'> :key #'car))

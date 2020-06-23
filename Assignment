@@ -1,0 +1,37 @@
+(defun checkp (i j)
+	(cond ((or (and (equal i j)) (equal i '_)) i)
+			(t '_)
+	)
+)
+
+(defun general (x p)
+	(mapcar #'(lambda (i j) (checkp i j)) x p)
+)
+
+(defun checkn (i j)
+	(cond ((or (and (equal i j)) (equal i '_)) 0)
+			(t 1)
+	)
+)
+
+(defun remo (x n)
+	(cond ((equal (reduce '+ (mapcar #'(lambda (i j) (checkn i j)) x n)) 0) '())
+			(t x)
+	)
+)
+
+(defun ca (c pos neg)
+	(dolist (p pos)
+		(setf c (mapcar #'(lambda(x) (general x p)) c))
+	)
+	(dolist (n neg)
+		(setf c (mapcar #'(lambda(x) (remo x n)) c))
+	)
+	(setf c (remove '() c))
+	c
+)
+
+(defun main (pos neg)
+	(ca (list (car pos)) (cdr pos) neg)
+)
+

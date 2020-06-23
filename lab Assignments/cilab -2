@@ -1,0 +1,56 @@
+(setf (get 'a 'PARENT) '(b c))
+(setf (get 'c 'PARENT) '(d e))
+(setf (get 'e 'PARENT) '(f g))
+
+(setf (get 'g 'PARENT) '())
+(setf (get 'f 'PARENT) '())
+(setf (get 'd 'PARENT) '(h i))
+(setf (get 'h 'PARENT) '())
+(setf (get 'i 'PARENT) '())
+(setf (get 'b 'PARENT) '())
+
+
+(defun PARENT (x) (get x 'PARENT))
+(defun GRANDPARENT (x) (get x 'GRANDPARENT))
+
+
+(defun dfs (x)
+	(cond ((eq (cdr (PARENT x)) '()) '())
+				((eq (cdr (PARENT (car (cdr (PARENT x))))) '()) (car (cdr (PARENT x))))
+				(t (dfs (car (cdr (PARENT x)))))
+	)
+)
+
+(setf (get 'x 'COORDINATE) '(2 4))
+(setf (get 'y 'COORDINATE) '(3 1))
+
+
+
+(defun distance (x y)
+	(sqrt (+ (* (- (car (get 'x 'COORDINATE)) (car (get 'y 'COORDINATE))) (- (car (get 'x 'COORDINATE)) (car (get 'y 'COORDINATE)))) 
+		(* (- (cadr (get 'x 'COORDINATE)) (cadr (get 'y 'COORDINATE))) (- (cadr (get 'x 'COORDINATE)) (cadr (get 'y 'COORDINATE)))))))
+
+
+(defun maxarray (a)
+	(cond ((null a) nil)
+				((null (cdr a)) (car a))
+				((> (car a) (maxarray (cdr a))) (car a))
+				(t (maxarray (cdr a)))
+	)
+)
+
+(defun subf (x)
+	(cond ((null x) 0)
+				((equal (car x) 'B) (+ 1 (subf (cdr x))))
+				((equal (car x) 'W) (- (subf (cdr x)) 1))
+				((equal (car x) 'WK) (+ 1 (subf (cdr x))))
+				((equal (car x) 'BK) (- (subf (cdr x)) 1))
+				(t (subf (cdr x)))
+	)
+)
+
+(defun adv (x)
+	(cond ((null x) 0)
+				((listp (car x)) (+ (subf (car x)) (adv (cdr x))))
+	) 
+)

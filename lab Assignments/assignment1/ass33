@@ -1,0 +1,123 @@
+(defun puzzle (open close final gn)
+	(if (not (null open))
+	(if (equal (cdar open) final) 
+		(cons (cons 0 final)'())
+		(cons (car open) (puzzle (hsort (append  (removel (generate_child (car open) 1 (findpos (car open) -1) final gn) (cdr open)) (removel close (removel (cdr open) (generate_child (car open) 1 (findpos (car open) -1) final gn)))))  (cons (car open) (removel (generate_child (car open) 1 (findpos (car open) -1) final gn) close)) final (+ gn 1)))
+        )
+        )
+)
+
+(defun generate_child	(list n posbk final gn)
+	(
+	if(= n 5) '()
+(cond((= n 1) (if(= (mod posbk 3) 0) (generate_child list (+ n 1) posbk final gn)
+	(cons (cons (huristic (node (cdr list) (cdr list) n 1 posbk) final 0 gn) (node (cdr list) (cdr list) n 1 posbk)) (generate_child list (+ n 1) posbk final gn))))
+	((= n 2) (if(= (mod posbk 3) 1) (generate_child list (+ n 1) posbk final gn)
+		(cons (cons (huristic (node (cdr list) (cdr list) n 1 posbk) final 0 gn) (node (cdr list) (cdr list) n 1 posbk)) (generate_child list (+ n 1) posbk final gn))))
+                                  ((= n 3) (if (or (= posbk 1) (= posbk 2) (= posbk 3)) (generate_child list (+ n 1) posbk final gn)
+                                                                  (cons (cons (huristic (node (cdr list) (cdr list) n 1 posbk) final 0 gn) (node (cdr list) (cdr list) n 1 posbk)) (generate_child list (+ n 1) posbk final gn))))
+                                  ((= n 4) (if(or (= posbk 7) (= posbk 8) (= posbk 9))(generate_child list (+ n 1) posbk final gn)
+                                                                  (cons (cons (huristic (node (cdr list) (cdr list) n 1 posbk) final 0 gn) (node (cdr list) (cdr list) n 1 posbk)) (generate_child list (+ n 1) posbk final gn))))
+                              )
+                )
+            )
+
+(defun node(lis list n i posbk)
+              (if(null lis) '()
+                              (cond((= n 1) (if(= i (+ posbk 1)) (cons -1 (node (cdr lis) list n (+ i 1) posbk))
+                                                                 (if(= i posbk) (cons (elein list 1 (+ posbk 1)) (node (cdr lis) list n (+ i 1) posbk))
+                                                                                (cons (car lis) (node (cdr lis) list n (+ i 1) posbk)))))
+                                   ((= n 2) (if(= i posbk) (cons (elein list 1 (- posbk 1)) (node (cdr lis) list n (+ i 1) posbk))
+                                                           (if(= i (- posbk 1)) (cons -1 (node (cdr lis) list n (+ i 1) posbk))
+                                                                              (cons (car lis) (node (cdr lis) list n (+ i 1) posbk)))))
+                                   ((= n 3) (if(= i posbk) (cons (elein list 1 (- posbk 3)) (node (cdr lis) list n (+ i 1) posbk))
+                                                               (if(= i (- posbk 3)) (cons -1 (node (cdr lis) list n (+ i 1) posbk))
+                                                                              (cons (car lis) (node (cdr lis) list n (+ i 1) posbk)))))
+                                    ((= n 4) (if(= i posbk) (cons (elein list 1 (+ posbk 3)) (node (cdr lis) list n (+ i 1) posbk))
+                                                           (if(= i (+ posbk 3)) (cons -1 (node (cdr lis) list n (+ i 1) posbk))
+                                                                              (cons (car lis) (node (cdr lis) list n (+ i 1) posbk)))))
+                              )
+             )
+         )
+
+(defun elein(lis i pos)
+                  (if(= i pos) (car lis)
+                               (elein (cdr lis) (+ i 1) pos)
+                  )
+             )
+
+(defun huristic(list final total gn)
+                      (if(null list) total
+                                     (if(or (equal (car list) (car final)) (= (car final) -1)) (huristic (cdr list) (cdr final) total gn)
+                                                                   (huristic (cdr list) (cdr final) (+ total 1) gn))
+                      )
+               )
+
+(defun removel(list open)
+                            (if(null open) '() 
+                                           (if(= (check list (car open)) 1) (cons (car open) (removel list (cdr open)))
+                                                                             (removel list (cdr open))
+                                           )
+                            ))
+
+(defun check(list ele)
+                           (if (null list) 1    (if(equal (cdr ele) (cdar list)) (if(< (car ele) (caar list)) (check (cdr list) ele) 0)
+                                                                          (check (cdr list) ele)
+                                         )
+                           )
+               )
+
+(defun hsort(list)
+                 (if(null list) '()
+                                 (cons (small (car list) (cdr list)) (hsort (remove_small list (small (car list) (cdr list)))))
+                 )
+              )
+
+(defun small(first list)
+                           (if(null list) first
+                                          (if(< (caar list) (car first)) (small (car list) (cdr list))
+                                                                         (small first (cdr list))
+                                          )
+                           )
+               )
+
+
+(defun remove_small(list small)
+                     (if(null list) '()
+                                    (if(equal (car list) small) (remove_small (cdr list) small)
+                                                                (cons (car list) (remove_small (cdr list) small))
+                                    )
+                    )
+               )
+
+(defun findpos(list ele)
+                     ( if(null list) 0
+                                     (if(= ele (car list)) 0
+                                                          (+ 1 (findpos (cdr list) ele))
+                                     )
+                    )
+              )
+
+(defun printing(first list final gn)
+	(if (null list) '()
+        	(if(= (check (generate_child (car list) 1 (findpos (car list) -1) final gn) first) 0) (cons (car list) (printing (car list) (cdr list) final gn))
+        	(printing first (cdr list) final gn)
+        	)
+    	)
+)
+
+(defun  reversal(list)
+                    (if(null list) '()
+                                   (append (reversal (cdr list)) (cons (car list) '()))
+	)
+)
+
+(
+defun prob (input final)
+	(reversal (printing (car (reversal (puzzle input '() final 0))) (cdr (reversal (puzzle input '() final 0))) final 0))
+)
+
+
+
+
+
